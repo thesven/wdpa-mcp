@@ -120,6 +120,33 @@ def create_server(client: WdpaClient | None = None) -> MCPServer:
         except WdpaError as exc:
             return {"error": str(exc), "summary": f"Coverage query failed: {exc}"}
 
+    @server.tool()
+    def filter_protected_areas_by_designation(
+        designation_type: str | None = None,
+        iucn_category: str | None = None,
+        country_code: str | None = None,
+        marine_only: bool = False,
+        limit: int = 15,
+    ) -> dict[str, Any]:
+        """Filter protected conservation zones by Ramsar, World Heritage, IUCN, or marine."""
+        try:
+            areas = api.filter_protected_areas_by_designation(
+                designation_type=designation_type,
+                iucn_category=iucn_category,
+                country_code=country_code,
+                marine_only=marine_only,
+                limit=limit,
+            )
+            summary = _format_parks_summary(areas)
+            return {"protected_areas": areas, "count": len(areas), "summary": summary}
+        except WdpaError as exc:
+            return {
+                "error": str(exc),
+                "protected_areas": [],
+                "count": 0,
+                "summary": f"Filter failed: {exc}",
+            }
+
     return server
 
 

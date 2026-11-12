@@ -98,6 +98,7 @@ async def test_server_tools(mock_client: WdpaClient) -> None:
     assert "search_protected_areas" in tool_names
     assert "get_protected_area_details" in tool_names
     assert "get_country_protection_coverage" in tool_names
+    assert "filter_protected_areas_by_designation" in tool_names
 
     res = await server.call_tool(
         "check_protected_area_nearby", {"lat": 44.6, "lon": -110.5, "radius_km": 15}
@@ -112,6 +113,11 @@ async def test_server_tools(mock_client: WdpaClient) -> None:
 
     res = await server.call_tool("get_country_protection_coverage", {"country_iso3": "USA"})
     assert "United States" in res.content[0].text
+
+    res = await server.call_tool(
+        "filter_protected_areas_by_designation", {"designation_type": "National Park"}
+    )
+    assert "National Park" in res.content[0].text
 
 
 @pytest.mark.asyncio
@@ -129,3 +135,8 @@ async def test_server_tool_errors(failing_client: WdpaClient) -> None:
 
     res4 = await server.call_tool("get_country_protection_coverage", {"country_iso3": "XYZ"})
     assert "Coverage failure" in res4.content[0].text
+
+    res5 = await server.call_tool(
+        "filter_protected_areas_by_designation", {"designation_type": "Ramsar"}
+    )
+    assert "Okavango" in res5.content[0].text

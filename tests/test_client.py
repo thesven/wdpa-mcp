@@ -139,3 +139,21 @@ def test_error_handling() -> None:
     client2 = WdpaClient(token="token123", transport=httpx.MockTransport(handler_bad_json))
     with pytest.raises(WdpaError, match="Invalid JSON"):
         client2.get_protected_area_details(123456789)
+
+
+def test_filter_protected_areas_by_designation() -> None:
+    client = WdpaClient()
+
+    # Ramsar filter
+    ramsar = client.filter_protected_areas_by_designation(designation_type="Ramsar")
+    assert len(ramsar) == 1
+    assert "Okavango" in ramsar[0]["name"]
+
+    # Marine filter
+    marine = client.filter_protected_areas_by_designation(marine_only=True)
+    assert len(marine) == 1
+    assert "Great Barrier Reef" in marine[0]["name"]
+
+    # IUCN category filter
+    cat_ii = client.filter_protected_areas_by_designation(iucn_category="II")
+    assert any("Yellowstone" in p["name"] for p in cat_ii)

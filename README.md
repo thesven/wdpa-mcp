@@ -12,6 +12,7 @@ Provides critical spatial conservation context to biodiversity observations (iNa
 
 ## Key Features
 
+- **International Designation Filtering**: Query reserves classified under global conventions, including Ramsar Wetlands of International Importance, UNESCO World Heritage Sites, and Biosphere Reserves.
 - **Reserve Proximity Evaluation**: Query coordinates (`lat`, `lon`, `radius_km`) to determine if a species observation is inside or near a protected conservation reserve.
 - **IUCN Management Categories**: Identify strict nature reserves (Ia), wilderness areas (Ib), national parks (II), natural monuments (III), habitat management areas (IV), protected landscapes (V), and sustainable resource management reserves (VI).
 - **National Coverage & 30x30 Metrics**: Retrieve terrestrial and marine protected surface area percentages by ISO-3 country to track progress toward Kunming-Montreal Global Biodiversity Framework targets.
@@ -25,6 +26,7 @@ Provides critical spatial conservation context to biodiversity observations (iNa
 | :--- | :--- |
 | `check_protected_area_nearby` | Assess whether GPS coordinates fall within or near a protected conservation area. |
 | `search_protected_areas` | Search protected conservation areas by name, designation, or ISO country. |
+| `filter_protected_areas_by_designation` | Filter protected zones by Ramsar, World Heritage, IUCN category, or marine status. |
 | `get_protected_area_details` | Retrieve complete governance, IUCN management category, and area for a WDPA site. |
 | `get_country_protection_coverage` | Retrieve national protected area coverage percentages and 30x30 statistics. |
 

@@ -92,6 +92,22 @@ FALLBACK_PARKS: dict[int, dict[str, Any]] = {
         "latitude": -18.2,
         "longitude": 147.7,
     },
+    555543026: {
+        "wdpa_id": 555543026,
+        "name": "Okavango Delta System",
+        "original_name": "Okavango Delta System",
+        "designation": "Ramsar Site, Wetland of International Importance",
+        "iucn_category": "Not Reported",
+        "iucn_category_title": "Ramsar Wetland",
+        "governance_type": "National government",
+        "country": "Botswana",
+        "country_iso3": "BWA",
+        "reported_area_km2": 55374.0,
+        "marine": False,
+        "status_year": 1996,
+        "latitude": -19.3,
+        "longitude": 22.9,
+    },
 }
 
 
@@ -138,6 +154,33 @@ class WdpaClient:
             ):
                 matches.append(park)
         return matches[:limit]
+
+    def filter_protected_areas_by_designation(
+        self,
+        designation_type: str | None = None,
+        iucn_category: str | None = None,
+        country_code: str | None = None,
+        marine_only: bool = False,
+        limit: int = 15,
+    ) -> list[dict[str, Any]]:
+        """Filter protected zones by international designation, IUCN category, or marine status."""
+        results = []
+        desig_clean = designation_type.strip().lower() if designation_type else None
+        cat_clean = iucn_category.strip().upper() if iucn_category else None
+        c_clean = country_code.strip().upper() if country_code else None
+
+        for park in FALLBACK_PARKS.values():
+            if desig_clean and desig_clean not in (park.get("designation") or "").lower():
+                continue
+            if cat_clean and cat_clean != (park.get("iucn_category") or "").upper():
+                continue
+            if c_clean and c_clean != (park.get("country_iso3") or "").upper():
+                continue
+            if marine_only and not park.get("marine"):
+                continue
+            results.append(park)
+
+        return results[:limit]
 
     def get_protected_area_details(self, wdpa_id: int) -> dict[str, Any]:
         """Fetch comprehensive details, IUCN category, and governance for a WDPA site."""
