@@ -147,6 +147,45 @@ def create_server(client: WdpaClient | None = None) -> MCPServer:
                 "summary": f"Filter failed: {exc}",
             }
 
+    @server.tool()
+    def list_country_protected_areas(
+        country_iso3: str,
+        page: int = 1,
+        per_page: int = 25,
+    ) -> dict[str, Any]:
+        """List and paginate designated national parks and reserves in a country by ISO-3 code."""
+        try:
+            res = api.list_country_protected_areas(
+                country_iso3=country_iso3, page=page, per_page=per_page
+            )
+            res["summary"] = _format_parks_summary(res.get("protected_areas", []))
+            return res
+        except WdpaError as exc:
+            return {
+                "error": str(exc),
+                "protected_areas": [],
+                "total": 0,
+                "summary": f"Country protected areas listing failed: {exc}",
+            }
+
+    @server.tool()
+    def get_protected_area_boundary_envelope(wdpa_id: int) -> dict[str, Any]:
+        """Retrieve bounding coordinates, centroid, and area envelope for GIS mapping."""
+        try:
+            env = api.get_protected_area_boundary_envelope(wdpa_id=wdpa_id)
+            c = env.get("centroid", {})
+            b = env.get("bounding_envelope", {})
+            summary = (
+                f"Boundary envelope for {env.get('name')} (WDPA: {wdpa_id}): "
+                f"Centroid ({c.get('latitude')}, {c.get('longitude')}) | "
+                f"BBox [{b.get('min_longitude')}, {b.get('min_latitude')}, "
+                f"{b.get('max_longitude')}, {b.get('max_latitude')}] | "
+                f"Area: {env.get('reported_area_km2')} km²"
+            )
+            return {"boundary_envelope": env, "summary": summary}
+        except WdpaError as exc:
+            return {"error": str(exc), "summary": f"Boundary envelope failed: {exc}"}
+
     return server
 
 

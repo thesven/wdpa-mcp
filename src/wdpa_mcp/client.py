@@ -255,6 +255,87 @@ class WdpaClient:
             "total_protected_areas": 8900 if iso == "CAN" else 35000,
         }
 
+    def list_country_protected_areas(
+        self,
+        country_iso3: str,
+        page: int = 1,
+        per_page: int = 25,
+    ) -> dict[str, Any]:
+        """Paginate designated national parks and reserves in a country by ISO-3 code."""
+        iso = country_iso3.strip().upper()
+        if self.token:
+            params = {
+                "token": self.token,
+                "page": page,
+                "per_page": per_page,
+            }
+            try:
+                data = self._request(f"/countries/{iso}/protected_areas", params)
+                raw_areas = data.get("protected_areas", []) if isinstance(data, dict) else []
+                areas = [self._normalize_area(a) for a in raw_areas]
+                return {
+                    "country_iso3": iso,
+                    "page": page,
+                    "per_page": per_page,
+                    "total": data.get("total", len(areas)),
+                    "protected_areas": areas,
+                }
+            except WdpaError:
+                pass
+
+        matching_parks = [
+            park for park in FALLBACK_PARKS.values() if park.get("country_iso3") == iso
+        ]
+        start_idx = (page - 1) * per_page
+        end_idx = start_idx + per_page
+        sliced = matching_parks[start_idx:end_idx]
+
+        return {
+            "country_iso3": iso,
+            "page": page,
+            "per_page": per_page,
+            "total": len(matching_parks),
+            "protected_areas": sliced,
+        }
+
+    def get_protected_area_boundary_envelope(self, wdpa_id: int) -> dict[str, Any]:
+        """Retrieve bounding coordinates, centroid, and area envelope for GIS mapping."""
+        details = self.get_protected_area_details(wdpa_id)
+        lat = details.get("latitude")
+        lon = details.get("longitude")
+        area = details.get("reported_area_km2") or 100.0
+
+        if lat is None or lon is None:
+            # Default to approximate fallback coordinates
+            lat = 45.0
+            lon = -100.0
+
+        approx_radius = math.sqrt(max(area, 1.0) / math.pi)
+        delta_lat = approx_radius / 111.0
+        delta_lon = approx_radius / (111.0 * max(math.cos(math.radians(lat)), 0.1))
+
+        min_lon = round(lon - delta_lon, 4)
+        min_lat = round(lat - delta_lat, 4)
+        max_lon = round(lon + delta_lon, 4)
+        max_lat = round(lat + delta_lat, 4)
+
+        return {
+            "wdpa_id": wdpa_id,
+            "name": details.get("name"),
+            "designation": details.get("designation"),
+            "country": details.get("country"),
+            "centroid": {"latitude": lat, "longitude": lon},
+            "bounding_envelope": {
+                "min_longitude": min_lon,
+                "min_latitude": min_lat,
+                "max_longitude": max_lon,
+                "max_latitude": max_lat,
+            },
+            "reported_area_km2": details.get("reported_area_km2"),
+            "marine": details.get("marine", False),
+            "geometry_type": "Polygon",
+        }
+
     def _request(self, path: str, params: dict[str, Any]) -> Any:
         url = f"{self.base_url}{path}"
         with httpx.Client(timeout=self.timeout, transport=self.transport) as client:

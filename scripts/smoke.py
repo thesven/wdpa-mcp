@@ -81,6 +81,8 @@ async def main() -> None:
                 "get_protected_area_details",
                 "get_country_protection_coverage",
                 "filter_protected_areas_by_designation",
+                "list_country_protected_areas",
+                "get_protected_area_boundary_envelope",
             }
             missing = expected_tools - tool_names
             assert expected_tools.issubset(tool_names), f"Missing tools: {missing}"

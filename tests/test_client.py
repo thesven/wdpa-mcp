@@ -157,3 +157,46 @@ def test_filter_protected_areas_by_designation() -> None:
     # IUCN category filter
     cat_ii = client.filter_protected_areas_by_designation(iucn_category="II")
     assert any("Yellowstone" in p["name"] for p in cat_ii)
+
+
+def test_list_country_and_boundary_envelope() -> None:
+    client = WdpaClient(token=None)
+
+    # Country listing fallback
+    res = client.list_country_protected_areas("CAN")
+    assert res["country_iso3"] == "CAN"
+    assert res["total"] >= 2
+    assert any("Banff" in p["name"] for p in res["protected_areas"])
+
+    # Boundary envelope
+    env = client.get_protected_area_boundary_envelope(741)
+    assert env["wdpa_id"] == 741
+    assert env["name"] == "Yellowstone National Park"
+    assert "centroid" in env
+    assert "bounding_envelope" in env
+    assert env["bounding_envelope"]["min_latitude"] < env["centroid"]["latitude"]
+    assert env["bounding_envelope"]["max_latitude"] > env["centroid"]["latitude"]
+
+    # API country listing test
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.url.path == "/v3/countries/FRA/protected_areas"
+        return httpx.Response(
+            200,
+            json={
+                "total": 1,
+                "protected_areas": [
+                    {
+                        "id": 1111,
+                        "name": "Parc national des Écrins",
+                        "designation": "National Park",
+                        "iucn_category": "II",
+                        "country": "France",
+                    }
+                ],
+            },
+        )
+
+    api_client = WdpaClient(token="token123", transport=httpx.MockTransport(handler))
+    api_res = api_client.list_country_protected_areas("FRA")
+    assert api_res["total"] == 1
+    assert api_res["protected_areas"][0]["name"] == "Parc national des Écrins"

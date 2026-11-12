@@ -29,6 +29,8 @@ Provides critical spatial conservation context to biodiversity observations (iNa
 | `filter_protected_areas_by_designation` | Filter protected zones by Ramsar, World Heritage, IUCN category, or marine status. |
 | `get_protected_area_details` | Retrieve complete governance, IUCN management category, and area for a WDPA site. |
 | `get_country_protection_coverage` | Retrieve national protected area coverage percentages and 30x30 statistics. |
+| `list_country_protected_areas` | List and paginate designated national parks and reserves in a country by ISO-3 code. |
+| `get_protected_area_boundary_envelope` | Retrieve bounding coordinates, centroid, and area envelope for GIS mapping. |
 
 ---
 

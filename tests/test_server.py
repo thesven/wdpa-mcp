@@ -69,6 +69,12 @@ def failing_client() -> WdpaClient:
         def get_country_protection_coverage(self, country_iso3: str):
             raise WdpaError("Coverage failure")
 
+        def list_country_protected_areas(self, *args, **kwargs):
+            raise WdpaError("Country listing failure")
+
+        def get_protected_area_boundary_envelope(self, *args, **kwargs):
+            raise WdpaError("Envelope failure")
+
     return FailingClient()
 
 
@@ -99,6 +105,8 @@ async def test_server_tools(mock_client: WdpaClient) -> None:
     assert "get_protected_area_details" in tool_names
     assert "get_country_protection_coverage" in tool_names
     assert "filter_protected_areas_by_designation" in tool_names
+    assert "list_country_protected_areas" in tool_names
+    assert "get_protected_area_boundary_envelope" in tool_names
 
     res = await server.call_tool(
         "check_protected_area_nearby", {"lat": 44.6, "lon": -110.5, "radius_km": 15}
@@ -118,6 +126,12 @@ async def test_server_tools(mock_client: WdpaClient) -> None:
         "filter_protected_areas_by_designation", {"designation_type": "National Park"}
     )
     assert "National Park" in res.content[0].text
+
+    res = await server.call_tool("list_country_protected_areas", {"country_iso3": "CAN"})
+    assert "Banff" in res.content[0].text or "Algonquin" in res.content[0].text
+
+    res = await server.call_tool("get_protected_area_boundary_envelope", {"wdpa_id": 741})
+    assert "Boundary envelope" in res.content[0].text
 
 
 @pytest.mark.asyncio
@@ -140,3 +154,9 @@ async def test_server_tool_errors(failing_client: WdpaClient) -> None:
         "filter_protected_areas_by_designation", {"designation_type": "Ramsar"}
     )
     assert "Okavango" in res5.content[0].text
+
+    res6 = await server.call_tool("list_country_protected_areas", {"country_iso3": "CAN"})
+    assert "Country listing failure" in res6.content[0].text
+
+    res7 = await server.call_tool("get_protected_area_boundary_envelope", {"wdpa_id": 999})
+    assert "Envelope failure" in res7.content[0].text
